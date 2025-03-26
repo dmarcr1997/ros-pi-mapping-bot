@@ -1,0 +1,26 @@
+# Common ROS artifacts
+build/
+devel/
+install/
+log/
+.cache/
+.vscode/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# C++ build artifacts
+*.o
+*.so
+*.a
+*.d
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+
+# ROS bag files
+*.bag
+
+# System files
+.DS_Store
