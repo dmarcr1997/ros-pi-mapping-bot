@@ -1,11 +1,10 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>q_learning</name>
+  <name>action_bridge</name>
   <version>0.0.0</version>
-  <description>The q_learning package</description>
+  <description>The action_bridge package</description>
 
   <maintainer email="dmarcr1997@gmail.com">dmarc</maintainer>
-
 
   <license>MIT</license>
 
@@ -18,5 +17,6 @@
   <exec_depend>std_msgs</exec_depend>
 
   <export>
+
   </export>
 </package>
