@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 import rospy
-from std_msgs.msg import Bool, String
+from std_msgs.msg import Bool, Int32
 from sensor_msgs.msg import LaserScan
 
 class RLStateNode():
@@ -9,7 +9,7 @@ class RLStateNode():
         rospy.init_node("rl_state_node") # Create new rl_state node
         rospy.Subscriber("/scan", LaserScan, self.lidar_handler) # subscribe to LaserScan data from lidar
         rospy.Subscriber("/ir_sensor", Bool, self.ir_handler) # subscribe to ir_sensor data
-        self.state_pub = rospy.Publisher("/rl_state", String, queue_size=10) # Create publisher for rl_state data for rviz/q-learning node
+        self.state_pub = rospy.Publisher("/rl_state", Int32, queue_size=10) # Create publisher for rl_state data for rviz/q-learning node
 
         # === Sensor state placeholders ===
         self.obstacle_front = 0
@@ -53,7 +53,7 @@ class RLStateNode():
             2) # set as base 2 int converts from binary to 0-31
 
             self.state_pub.publish(state_id) # Publish state info
-            rospy.loginfo(f"RL State: {state_bits} → {state_id}") # DEBUGGING LOGS
+            #rospy.loginfo(f"RL State: {state_bits} → {state_id}") # DEBUGGING LOGS
 
             self.rate.sleep() # keeps node at consistent 10 Hz run rate. 10 updates / second
 

@@ -23,16 +23,16 @@ def stop():
 	GPIO.output(IN4, GPIO.LOW)
 
 def forward():
-	GPIO.output(IN1, GPIO.HIGH)
-	GPIO.output(IN2, GPIO.LOW)
-	GPIO.output(IN3, GPIO.HIGH)
-	GPIO.output(IN4, GPIO.LOW)
-
-def backward():
 	GPIO.output(IN1, GPIO.LOW)
 	GPIO.output(IN2, GPIO.HIGH)
 	GPIO.output(IN3, GPIO.LOW)
 	GPIO.output(IN4, GPIO.HIGH)
+
+def backward():
+	GPIO.output(IN1, GPIO.HIGH)
+	GPIO.output(IN2, GPIO.LOW)
+	GPIO.output(IN3, GPIO.HIGH)
+	GPIO.output(IN4, GPIO.LOW)
 
 def spin_left():
 	GPIO.output(IN1, GPIO.LOW)

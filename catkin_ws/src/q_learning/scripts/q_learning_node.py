@@ -10,9 +10,6 @@ class QLearningAgent:
         rospy.init_node("q_learning_node") # Initialize new ROS node: q_learning_agent
 
         #=== Params ===
-        self.successful = False
-        self.episode_reward = 0
-        self.success_threshold = 50
         self.alpha = 0.1 # Learning Rates/Step size
         self.gamma = 0.9 # How much feature rewards are valued (closer to 0 immediate reward, closer to 1 delayed gratification)
         self.epsilon = 1.0 # Controls randomness of decisions(exploration vs sticking to what looks best always)
@@ -22,8 +19,13 @@ class QLearningAgent:
         #=== State/Action vars ===
         self.num_states = 32 # 32 states with our input of 0000 -> 11111 binary numbers 0-31
         self.actions = ["forward", "left", "right", "backward", "stop"] # Possible actions in relations to inputs
-        self.num_actions = len(self.actions) # Count of actiosn
-
+        self.num_actions = len(self.actions) # Count of actions
+        self.successful = False
+        self.episode_reward = 0
+        self.success_threshold = 100 # Success/endstate
+        self.thermal_count = 0 # Track time in thermal zones
+        self.thermal_threshold = 5 # Max time in thermal zone to restart
+        self.non_thermal_count = 0 # Track time in safe zones
         #=== Q-Learning Vars ===
         self.q_table = np.zeros((self.num_states, self.num_actions)) # rewards for doing actions in certain states for now makes a 16x5 matrix with an action, reward, and input for each cell
         self.current_state = 0 # initialize starting state
@@ -60,18 +62,38 @@ class QLearningAgent:
 
         if thermal: # Punishment of -10
             reward -= 10
-        
+            self.non_thermal_count = 0
+        if not front_obstacle and not rear_obstacle and not left_obstacle and not right_obstacle and not thermal and self.non_thermal_count > 2:
+            rospy.loginfo("🟢 SAFE ZONE FOUND: 40")
+            reward += 20
+        elif not thermal and self.non_thermal_count > 2 and self.actions[action_idx] == "stop":
+            reward += 10
+            rospy.loginfo("🟢 SEMI-SAFE ZONE FOUND: 15")
+        elif self.actions[action_idx] == "forward" and not front_obstacle and not thermal:
+            rospy.loginfo("🟢 ONWARD: 5")
+            reward += 5
+
         if front_obstacle and self.actions[action_idx] == "forward":
             reward -= 10
         if rear_obstacle and self.actions[action_idx] == "backward":
             reward -= 10
-        if self.actions[action_idx] == "stop":
+        if thermal and self.actions[action_idx] == "stop":
             reward -= 5
-        if self.actions[action_idx] == "forward" and not front_obstacle and not thermal:
-            reward += 5
-        if not front_obstacle and not left_obstacle and not right_obstacle and not rear_obstacle and not thermal:
-            reward += 20
 
+        #Consistent obstacle penalties
+        obstacle_penalties = 0
+        if front_obstacle:
+            obstacle_penalties -= 2
+        if left_obstacle:
+            obstacle_penalties -= 2
+        if right_obstacle:
+            obstacle_penalties -= 2
+        if rear_obstacle:
+            obstacle_penalties -= 2
+
+        reward += obstacle_penalties # Add in penalties for obstacles
+
+        rospy.loginfo(f"REWARD: {reward}")
         return reward # Reward for safe/good actions
 
     def update_q_table(self, reward, new_state):
@@ -84,7 +106,7 @@ class QLearningAgent:
         future_q = np.max(self.q_table[new_state]) # Determine next q: Q of next action(max of table with state value)
         # DO the thing that gives the best reward
         updated_q = old_q + self.alpha * (reward + self.gamma * future_q - old_q) # Determine Q with Bellman equation
-        self.q_table[self.prev_state, self.prev_action] = updated_q # Update Q table state space
+        self.q_table[self.previous_state, self.previous_action] = updated_q # Update Q table state space
 
     def state_change_handler(self, msg):
         self.current_state = msg.data # Save current state sent over from rl_state
@@ -101,13 +123,20 @@ class QLearningAgent:
 
                 bits = list(f"{self.current_state:05b}") # turn int into list of binary numbers
                 thermal = int(bits[4])
-                obstacles = any(int(b) for b in bits[0:4])
                 self.episode_reward += reward
-                if thermal or obstacles: # If in thermal state or obstacle state start training loop over with lower epsilon value
-                    rospy.loginfo(f"Episode finished — resetting: {self.episode_reward}")
+
+                if thermal:
+                    self.thermal_count += 1
+                else:
+                    self.thermal_count = 0
+
+                if self.thermal_count > self.thermal_threshold: # If in thermal state or obstacle state start training loop over with lower epsilon value
+                    rospy.loginfo(f"Episode max thermal hazard — resetting: {self.episode_reward}")
                     self.epsilon = max(self.min_epsilon, self.epsilon * self.epsilon_decay)
-                    self.prev_state = None
-                    self.prev_action = None
+                    self.previous_state = None
+                    self.previous_action = None
+                    self.episode_reward = 0
+                    self.thermal_count = 0
                     continue
                 # === Check if Goal Achieved ===
                 if self.episode_reward >= self.success_threshold and thermal == 0:
@@ -117,8 +146,8 @@ class QLearningAgent:
                     break  # Optionally shutdown here
 
             #=== Persist state and action for next loop
-            self.prev_state = self.current_state
-            self.prev_action = action_idx
+            self.previous_state = self.current_state
+            self.previous_action = action_idx
 
             self.rate.sleep() # Sleep to run a 2Hz
 

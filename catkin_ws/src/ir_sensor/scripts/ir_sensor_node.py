@@ -24,7 +24,7 @@ THRESHOLD_VALUE = 18000 # ADC IR Value for detection from IR SENSOR
 
 try:
     while not rospy.is_shutdown():
-        voltage = chan.value # should be lower values for darker colors and > 1 for lighter colors
+        #voltage = chan.value # should be lower values for darker colors and > 1 for lighter colors
         rospy.loginfo(f"VALUE: {voltage}")
         detected = voltage > THRESHOLD_VALUE # 0 or LOW Value means detection
         pub.publish(detected) # Publish value to /ir_sensor topic
