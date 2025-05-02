@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 import rospy
-from std_msgs.msg import Bool, Int32, Float32
+from std_msgs.msg import Bool, Int64, Float32
 from sensor_msgs.msg import LaserScan
 OPTIMAL_IR_THRESHOLD = 18000 # White paper is this or less. GOAL: we are looking to stop on the white paper
 class RLStateNode():
@@ -10,7 +10,7 @@ class RLStateNode():
         rospy.Subscriber("/scan", LaserScan, self.lidar_handler) # subscribe to LaserScan data from lidar
         rospy.Subscriber("/ir_sensor", Bool, self.ir_handler) # subscribe to ir_sensor data
         rospy.Subscriber("/thermal", Float32, self.thermal_value_handler) # subscribe to thermal values from ir
-        self.state_pub = rospy.Publisher("/rl_state", Int32, queue_size=10) # Create publisher for rl_state data for rviz/q-learning node
+        self.state_pub = rospy.Publisher("/rl_state", Int64, queue_size=10) # Create publisher for rl_state data for rviz/q-learning node
 
         # === Sensor state placeholders ===
         self.obstacle_front = 0

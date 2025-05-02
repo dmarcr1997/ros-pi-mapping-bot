@@ -2,7 +2,7 @@
 import rospy
 import random
 import numpy as np
-from std_msgs.msg import Int32, String
+from std_msgs.msg import Int64, String
 
 class QLearningAgent:
     def __init__(self):
@@ -17,7 +17,7 @@ class QLearningAgent:
         self.min_epsilon = 0.05 # minimum randomness value
 
         #=== State/Action vars ===
-        self.num_states = 32 # 32 states with our input of 0000 -> 11111 binary numbers 0-31
+        self.num_states = 64 # 64 states with our input of 0000 -> 111111 binary numbers 0-63
         self.actions = ["forward", "left", "right", "backward", "stop"] # Possible actions in relations to inputs
         self.num_actions = len(self.actions) # Count of actions
         self.successful = False
@@ -33,7 +33,7 @@ class QLearningAgent:
         self.previous_action = None # What rover did last step
 
         #=== ROS Setup of sub and pub ===
-        rospy.Subscriber("/rl_state", Int32, self.state_change_handler) # Get state values from rl_state
+        rospy.Subscriber("/rl_state", Int64, self.state_change_handler) # Get state values from rl_state
         self.action_pub = rospy.Publisher("/q_action", String, queue_size=10) # Setup publisher to send actions out to q_action
 
         self.rate = rospy.Rate(2) # run rate of node 2Hz

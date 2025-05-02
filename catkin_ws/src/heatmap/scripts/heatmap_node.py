@@ -48,7 +48,8 @@ class HeatMapNode:
         # Sensor flags
         self.thermal_value = None
         self.front_obstacle = False
-
+        self.back_obstacle = False
+        
         self.rate = rospy.Rate(2)  # 2Hz node run rate
         rospy.loginfo("Heatmap Node Initialized...")
 
