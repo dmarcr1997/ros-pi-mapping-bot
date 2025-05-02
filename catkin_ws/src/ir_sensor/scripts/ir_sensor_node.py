@@ -20,7 +20,7 @@ ads = ADS1115(i2c) # instantiate ADS1115 connected to i2c
 chan = AnalogIn(ads, 0)
 
 #=== Threshold =============
-THRESHOLD_VALUE = 18000 # ADC IR Value for detection from IR SENSOR
+THRESHOLD_VALUE = 28000 # ADC IR Value for detection from IR SENSOR
 
 try:
     while not rospy.is_shutdown():

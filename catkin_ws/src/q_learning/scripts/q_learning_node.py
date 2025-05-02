@@ -48,7 +48,17 @@ class QLearningAgent:
         return action_idx
 
     def get_reward(self, state, action_idx):
-        bits = list(f"{state:05b}") # turn state int into binary list of numbers
+        """
+        Determine rewards depending on rover states below:
+        + 50 for stopping in optimal thermal zone
+        + 20 for reaching open, safe zone
+        + 10 for stopping in a non-thermal but sub optimal zone
+        + 5 for good forward actions
+        - 10 for collision(simulated)
+        - 10 for stopping in thermal 
+        - 5 for thermal hazards
+        """
+        bits = list(f"{state:06b}") # turn state int into binary list of numbers
         # Get obstacles from state dict
         front_obstacle = int(bits[0])
         left_obstacle = int(bits[1])
@@ -57,28 +67,37 @@ class QLearningAgent:
 
         # Get thermal from state dict
         thermal = int(bits[4]) # Get thermal bit
-
+        optimal_thermal = int(bits[5])
         reward = 0
 
-        if thermal: # Punishment of -10
-            reward -= 10
-            self.non_thermal_count = 0
-        if not front_obstacle and not rear_obstacle and not left_obstacle and not right_obstacle and not thermal and self.non_thermal_count > 2:
-            rospy.loginfo("🟢 SAFE ZONE FOUND: 40")
+        if optimal_thermal and self.actions[action_idx] == "stop":
+            reward += 50
+            rospy.loginfo("🚀 OPTIMAL ZONE — Mission Success! +50")
+
+        elif not front_obstacle and not rear_obstacle and not left_obstacle and not right_obstacle and not thermal and self.actions[action_idx] == "stop":
             reward += 20
+            rospy.loginfo("🟢 SAFE ZONE FOUND: 20")
+
         elif not thermal and self.non_thermal_count > 2 and self.actions[action_idx] == "stop":
             reward += 10
-            rospy.loginfo("🟢 SEMI-SAFE ZONE FOUND: 15")
+            rospy.loginfo("🟢 SEMI-SAFE ZONE FOUND: 10")
+        
         elif self.actions[action_idx] == "forward" and not front_obstacle and not thermal:
             rospy.loginfo("🟢 ONWARD: 5")
             reward += 5
 
         if front_obstacle and self.actions[action_idx] == "forward":
             reward -= 10
+            rospy.loginfo("💥 Front Collision -10")
         if rear_obstacle and self.actions[action_idx] == "backward":
             reward -= 10
-        if thermal and self.actions[action_idx] == "stop":
+            rospy.loginfo("💥 Rear Collision -10")
+        if thermal:
             reward -= 5
+            rospy.loginfo("🔥 Thermal Hazard -5")
+        if thermal and self.actions[action_idx] == "stop":
+            reward -= 10
+            rospy.loginfo("🛑 Stopped in Thermal Zone -10")
 
         #Consistent obstacle penalties
         obstacle_penalties = 0
@@ -110,6 +129,13 @@ class QLearningAgent:
 
     def state_change_handler(self, msg):
         self.current_state = msg.data # Save current state sent over from rl_state
+    
+    def reset_episode(self):
+        self.epsilon = max(self.min_epsilon, self.epsilon * self.epsilon_decay)
+        self.previous_state = None
+        self.previous_action = None
+        self.episode_reward = 0
+        self.thermal_count = 0
 
     def run(self):
         while not rospy.is_shutdown() and not self.successful:# While ros is running run Q-Learning node
@@ -121,8 +147,10 @@ class QLearningAgent:
                 reward = self.get_reward(self.current_state, action_idx) # get reward
                 self.update_q_table(reward, self.current_state) # Update q_table
 
-                bits = list(f"{self.current_state:05b}") # turn int into list of binary numbers
+                bits = list(f"{self.current_state:06b}") # turn int into list of binary numbers
                 thermal = int(bits[4])
+                optimal_thermal = int(bits[5])
+
                 self.episode_reward += reward
 
                 if thermal:
@@ -130,17 +158,19 @@ class QLearningAgent:
                 else:
                     self.thermal_count = 0
 
+                # === Failure States ===
                 if self.thermal_count > self.thermal_threshold: # If in thermal state or obstacle state start training loop over with lower epsilon value
                     rospy.loginfo(f"Episode max thermal hazard — resetting: {self.episode_reward}")
-                    self.epsilon = max(self.min_epsilon, self.epsilon * self.epsilon_decay)
-                    self.previous_state = None
-                    self.previous_action = None
-                    self.episode_reward = 0
-                    self.thermal_count = 0
+                    self.reset_episode()
                     continue
+                if self.episode_reward < -20: # Reset if stuck in loop 
+                    rospy.loginfo("🔁 Stuck in failure loop — resetting.")
+                    self.reset_episode()
+                    continue
+
                 # === Check if Goal Achieved ===
-                if self.episode_reward >= self.success_threshold and thermal == 0:
-                    rospy.loginfo(f"Goal achieved! Reward: {self.episode_reward}. Stopping rover.")
+                if self.episode_reward >= self.success_threshold and optimal_thermal == 1:
+                    rospy.loginfo(f"✅ Goal achieved! Reward: {self.episode_reward}. Stopping rover.")
                     self.action_pub.publish("stop")
                     self.successful = True
                     break  # Optionally shutdown here
