@@ -1,0 +1,17 @@
+<launch>
+  <!-- Motor Control Node -->
+  <node pkg="motor_control" type="motor_driver.py" name="motor_driver" output="screen" />
+
+  <!-- IR Sensor Node -->
+  <node pkg="ir_sensor" type="ir_sensor_node.py" name="ir_sensor_node" output="screen" />
+
+  <!-- RL State Node -->
+  <node pkg="rl_state" type="rl_state_node.py" name="rl_state_node" output="screen" />
+
+   <!-- Q-Learning Node -->
+  <node pkg="q_learning" type="q_learning_node.py" name="q_learning_node" output="screen" />
+
+  <!-- Q-Action Handler Node -->
+  <node pkg="action_bridge" type="q_action_handler_node.py" name="q_action_handler_node" output="screen" />
+</launch>
+
