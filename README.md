@@ -1,12 +1,12 @@
-# QRoq: A Learning Rover for Harsh Environments
+# QRoq: A Self Learning Rover for Harsh Environments
 <img src="./images/1000007142.jpg" />
-PQRoq is a reinforcement learning–based rover designed to simulate autonomous survival in remote areas. It leverages Python based ROS-Nodes, Raspberry Pi 3B, LIDAR, IR sensor, and a heatmap-based environment tracker to safely find optimal resting zones while avoiding thermal and obstacle hazards.
+PQRoq is a reinforcement learning–based rover designed to simulate autonomous survival in remote areas. It leverages Python-based ROS-Nodes, Raspberry Pi 3B, LIDAR, IR sensors, and a heatmap-based environment tracker to safely find optimal resting zones while avoiding thermal and obstacle hazards.
 
 ## 🚀 Features
 
 - **Reinforcement Learning (Q-Learning)** to teach the rover survival behavior and allow it to learn to traverse any environment
 - **IR and LIDAR sensor integration** for hazard detection
-- **Thermal + Obstacle Heatmap** visualization run on windows computer using pygame and heatmap json served via Flask from the PI
+- **Thermal + Obstacle Heatmap** visualization run on Windows computer using pygame and heatmap json served via Flask from the PI
 - **Modular ROS Node Architecture** for rapid upgrades and algorithm experimentation
 
 ## 🧠 Tech Stack
@@ -49,7 +49,7 @@ Set `ROVER_URL` in the visualizer to your Pi's IP address.
 - Genetic algorithm navigation strategy
 - Full SLAM map + path optimization
 - Autonomous task scheduling in hostile environments
-- Autonomous charging with solar panel
+- Autonomous charging with a solar panel
 
 ## 📃 License
 
